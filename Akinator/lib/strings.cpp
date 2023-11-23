@@ -90,7 +90,7 @@ const char * skip_spaces(const char * buffer)
 {
     MY_ASSERT(buffer);
 
-    while (isspace(*buffer) && *buffer != EOF && *buffer != '\0' && *buffer != ';')
+    while (isspace(*buffer) && *buffer != EOF && *buffer != '\0')
         buffer++;
 
     return (buffer);

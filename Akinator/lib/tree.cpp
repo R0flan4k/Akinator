@@ -38,6 +38,18 @@ static void op_elem_assigment(Tree_t * dst, Tree_t const src)
 // }
 
 
+TError_t tree_set_node_value(TreeNode * node, const Tree_t value)
+{
+    MY_ASSERT(node);
+
+    TError_t errors = 0;
+
+    op_elem_assigment(&node->value, value);
+
+    return errors;
+}
+
+
 TError_t op_new_tree(Tree * tree, const Tree_t root_value)
 {
     MY_ASSERT(tree);
@@ -317,7 +329,7 @@ static void print_tree_nodes(const TreeNode * node, FILE * fp)
     // printf("printing: %p\n"
     //        "          %p\n"
     //        "          %p\n", node->value, node->left, node->right);
-    fprintf(fp, "    node%p [ label = \"{[%p] " ELEM_SPEC " | { <l> left[%p] | right[%p]  }}\" ]\n",
+    fprintf(fp, "    node%p [ label = \"{[%p] " TREE_SPEC " | { <l> left[%p] | right[%p]  }}\" ]\n",
             node, node, node->value, node->left, node->right);
             // printf("printed\n");
 

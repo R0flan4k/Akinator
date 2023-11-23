@@ -1,19 +1,20 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys\stat.h>
 
 #include "file_processing.h"
 #include "my_assert.h"
 
 
-// long get_file_size(FILE * fp)
-// {
-//     struct stat buffer = {};
+long get_file_size(FILE * fp)
+{
+    struct stat buffer = {};
 
-//     if (fstat(fileno(fp), &buffer))
-//         return (long) NULL;
+    if (fstat(fileno(fp), &buffer))
+        return (long) NULL;
 
-//     return buffer.st_size;
-// }
+    return buffer.st_size;
+}
 
 
 FILE * file_open(const char * file_name, const char * mode)
@@ -54,4 +55,45 @@ size_t write_file(char * buffer, const size_t buffer_size, FILE * fp)
     }
 
     return val;
+}
+
+
+long text_file_to_buffer(char * file_name, char * * buffer_ptr)
+{
+    MY_ASSERT(file_name);
+    MY_ASSERT(buffer_ptr);
+
+    FILE * fp = NULL;
+
+    if (!(fp = file_open(file_name, "r")))
+    {
+        return (long) NULL;
+    }
+    printf("Eblo\n");
+
+    long file_size = get_file_size(fp);
+    printf("Eblo\n");
+    long buffer_size = file_size + 1;
+
+    if (!(*buffer_ptr = (char *) calloc(buffer_size, sizeof(char))))
+    {
+        fclose(fp);
+        printf("Can't allocate a memory\n");
+        return (long) NULL;
+    }
+    printf("Eblo\n");
+
+    if (!(*buffer_ptr = read_file(*buffer_ptr, buffer_size, fp)))
+    {
+        fclose(fp);
+        free(*buffer_ptr);
+        return (long) NULL;
+    }
+    printf("Eblo\n");
+
+    *buffer_ptr[buffer_size - 1] = '\0';
+
+    fclose(fp);
+
+    return buffer_size;
 }

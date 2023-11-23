@@ -387,7 +387,7 @@ void show_dump_basis(const Stack * stk, const char * stack_name, const Error_t *
         while (j < array_size)
         {
             if (errors[j].mask & *verificator)
-                fprintf(OUTPUT_ERROR_FILE, RED_COLOR "%s" DEFAULT_COLOR, errors[j].output_error);
+                printf(RED_COLOR "%s" DEFAULT_COLOR, errors[j].output_error);
 
             j++;
         }
