@@ -3,7 +3,6 @@
 
     #include <stdio.h>
 
-
     typedef char * Tree_t;
     typedef int TError_t;
 

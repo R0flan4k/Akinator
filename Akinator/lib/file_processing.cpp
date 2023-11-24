@@ -6,15 +6,15 @@
 #include "my_assert.h"
 
 
-long get_file_size(FILE * fp)
-{
-    struct stat buffer = {};
+// long get_file_size(FILE * fp)
+// {
+//     struct stat buffer = {};
 
-    if (fstat(fileno(fp), &buffer))
-        return (long) NULL;
+//     if (fstat(fileno(fp), &buffer))
+//         return (long) NULL;
 
-    return buffer.st_size;
-}
+//     return buffer.st_size;
+// }
 
 
 FILE * file_open(const char * file_name, const char * mode)
@@ -69,19 +69,16 @@ long text_file_to_buffer(char * file_name, char * * buffer_ptr)
     {
         return (long) NULL;
     }
-    printf("Eblo\n");
 
     long file_size = get_file_size(fp);
-    printf("Eblo\n");
     long buffer_size = file_size + 1;
 
     if (!(*buffer_ptr = (char *) calloc(buffer_size, sizeof(char))))
     {
-        fclose(fp);
         printf("Can't allocate a memory\n");
+        fclose(fp);
         return (long) NULL;
     }
-    printf("Eblo\n");
 
     if (!(*buffer_ptr = read_file(*buffer_ptr, buffer_size, fp)))
     {
@@ -89,9 +86,8 @@ long text_file_to_buffer(char * file_name, char * * buffer_ptr)
         free(*buffer_ptr);
         return (long) NULL;
     }
-    printf("Eblo\n");
 
-    *buffer_ptr[buffer_size - 1] = '\0';
+    (*buffer_ptr)[buffer_size - 1] = '\0';
 
     fclose(fp);
 

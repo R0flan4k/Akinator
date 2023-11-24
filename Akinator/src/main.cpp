@@ -17,32 +17,28 @@ int main(int argc, char * argv[])
     char * buffer = NULL;
 
     long buffer_size = 0;
-    printf("Tree suka\n");
     if (!(buffer_size = text_file_to_buffer(SOURCE_FILE_NAME, &buffer)))
     {
         aktor_errors |= AKINATOR_ERRORS_CANT_CONVERT_TEXT_FILE;
 
         return aktor_errors;
     }
-    printf("Che za huyna?\n");
 
     Tree akinator_tree = {};
 
     op_new_tree(&akinator_tree, "");
 
-    printf("%ld\n", buffer_size);             //
-    MY_ASSERT(buffer);                          //
-    for (long i = 0; i < buffer_size; i++)      //
-    {                                           //
-        printf("%c", buffer[i]);                //
-    }                                           //
-
-    printf("%p\n", buffer);
+    // printf("%ld\n", buffer_size);             //
+    // MY_ASSERT(buffer);                          //
+    // for (long i = 0; i < buffer_size; i++)      //
+    // {                                           //
+    //     printf("%c", buffer[i]);                //
+    // }                                           //
 
     if (aktor_errors = create_akinator_tree(&akinator_tree, buffer))
     {
         tree_dump(&akinator_tree);
-        // return aktor_errors;
+        return aktor_errors;
     }
 
     tree_dump(&akinator_tree);
