@@ -3,6 +3,7 @@
 
     #include <stdio.h>
 
+
     typedef char * Tree_t;
     typedef int TError_t;
 
@@ -27,6 +28,7 @@
         Tree_t value;
         TreeNode * right;
         TreeNode * left;
+        char BUS[4];
     };
 
     struct Tree {

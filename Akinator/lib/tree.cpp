@@ -69,8 +69,6 @@ TError_t op_new_tree(Tree * tree, const Tree_t root_value)
     }
     tree->size = 1;
 
-    tree->root->left = NULL;
-    tree->root->right = NULL;
 
     if (!(tree->root->value = (Tree_t) calloc(MAX_STR_SIZE, sizeof(char))))
     {
@@ -78,6 +76,9 @@ TError_t op_new_tree(Tree * tree, const Tree_t root_value)
         errors |= TREE_ERRORS_CANT_ALLOCATE_MEMORY;
         return errors;
     }
+
+    tree->root->left = NULL;
+    tree->root->right = NULL;
 
     op_elem_assigment(&tree->root->value, root_value);
 
@@ -275,7 +276,7 @@ void tree_dump_iternal(const Tree * tree,
     char dot_file_name[64] = "";
     make_file_extension(dot_file_name, TREE_DUMP_FILE_NAME, ".dot");
 
-    if (!(fp = file_open("./graphviz/tree_dump.dot", "wb")))
+    if (!(fp = file_open(dot_file_name, "wb")))
     {
         return;
     }
@@ -308,17 +309,17 @@ void tree_dump_iternal(const Tree * tree,
 
     fclose(fp);
 
-    static size_t dumps_count = 0;
+    static size_t tree_dumps_count = 0;
     char png_dump_file_name[64] = "";
     char command_string[BUFFER_SIZE] = "";
     char extension_string[BUFFER_SIZE] = "";
 
-    sprintf(extension_string, "%zd.png", dumps_count);
+    sprintf(extension_string, "%zd.png", tree_dumps_count);
     make_file_extension(png_dump_file_name, TREE_DUMP_FILE_NAME, extension_string);
     sprintf(command_string, "dot %s -T png -o %s", dot_file_name, png_dump_file_name);
     system(command_string);
 
-    dumps_count++;
+    tree_dumps_count++;
 }
 
 

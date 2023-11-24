@@ -41,7 +41,12 @@ int main(int argc, char * argv[])
         return aktor_errors;
     }
 
-    tree_dump(&akinator_tree);
+    if (aktor_errors = akinator_start_game(&akinator_tree))
+    {
+        tree_dump(&akinator_tree);
+        akinator_dump(&akinator_tree);
+        return aktor_errors;
+    }
 
     free(buffer);
     op_delete_tree(&akinator_tree);
