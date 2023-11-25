@@ -96,10 +96,10 @@ Error_t stack_dtor(Stack * stk)
 
     stk->capacity =       STACK_POISON;
     stk->size =           STACK_POISON;
-    stk->hash =           STACK_POISON;
-    stk->data_hash =      STACK_POISON;
-    stk->left_jagajaga =  STACK_POISON;
-    stk->right_jagajaga = STACK_POISON;
+    stk->hash =           0;
+    stk->data_hash =      0;
+    stk->left_jagajaga =  0;
+    stk->right_jagajaga = 0;
 
     free(stack_data_to_raw(stk));
     stk->data = nullptr;
@@ -406,6 +406,32 @@ static StackError create_stack_error(StackErrorsMasks error_mask, const char * e
 
     return error;
 }
+
+
+Error_t stack_reverse_copy(Stack * dst, Stack * src)
+{
+    MY_ASSERT(dst);
+    MY_ASSERT(src);
+
+    Error_t errors = 0;
+    Elem_t val = 0;
+
+    while (src->size > 0)
+    {
+        if (errors = stack_pop(src, &val))
+        {
+            return errors;
+        }
+
+        if (errors = stack_push(dst, val))
+        {
+            return errors;
+        }
+    }
+
+    return errors;
+}
+
 
 #ifndef NHASHPOTECTION
     Hash_t calculate_hash(void * stk, const size_t size)

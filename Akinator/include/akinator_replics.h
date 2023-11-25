@@ -14,6 +14,9 @@
         const char * say_goodbye;
         const char * next_time;
         const char * dump_maked;
+        const char * ask_definition_name;
+        const char * definition;
+        const char * invalid_object;
     };
 
     extern const AkinatorReplics ENG_AKINATOR_REPLICS;

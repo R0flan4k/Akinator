@@ -8,12 +8,14 @@
 #include "strings.h"
 #include "my_assert.h"
 #include "file_processing.h"
+#include "stack.h"
 
 const size_t MAX_STRING_SIZE = 64;
 const Tree_t AKINATOR_TRASH_VALUE = "nill";
-const char * AKINATOR_FUNCTIONS = "QGM";
+const char * AKINATOR_FUNCTIONS = "QGMD";
 const char * AKINATOR_SUPPORTED_ANSWERS = "YN";
 const char * AKINATOR_DUMP_FILE_NAME = "./graphviz/akinator_dump";
+const int ROOT_STACK_VALUE = 0;
 
 static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, const char * * buffer_ptr);
 static bool is_open_braket(const char * buffer_ptr);
@@ -28,6 +30,11 @@ static AError_t akinator_add_object(Tree * tree, TreeNode * node, char * new_obj
                                     char * last_object_name, char * difference);
 static void akinator_print_tree_nodes(const TreeNode * node, FILE * fp);
 static void akinator_print_tree_edges(const TreeNode * node, FILE * fp);
+static AError_t find_object(const Tree * tree, Stack * stk, const char * object_name);
+static AError_t find_object_recursive(const TreeNode * node, Stack * stk, const char * object_name, bool * is_founded);
+static AError_t print_definition(const Tree * tree, Stack * stk);
+static AError_t print_definition_recursive(const TreeNode * node, Stack * stk);
+static AError_t define_object(const Tree * tree, const char * object_name);
 
 
 AError_t create_akinator_tree(Tree * tree, char * buffer)
@@ -146,6 +153,7 @@ AError_t akinator_start_game(Tree * tree)
     MY_ASSERT(tree);
 
     AError_t aktor_errors = 0;
+    char object_name[MAX_STR_SIZE] = "";
 
     output_message(ENG_AKINATOR_REPLICS.say_hello);
     output_message(ENG_AKINATOR_REPLICS.show_menu);
@@ -171,6 +179,18 @@ AError_t akinator_start_game(Tree * tree)
                 output_message(ENG_AKINATOR_REPLICS.dump_maked);
 
                 break;
+
+            case AKINATOR_FUNCTIONS_DEFINITION:
+                output_message(ENG_AKINATOR_REPLICS.ask_definition_name);
+                scanf("%s", object_name);
+
+                if (aktor_errors = define_object(tree, object_name))
+                {
+                    return aktor_errors;
+                }
+
+                break;
+
 
             case AKINATOR_FUNCTIONS_NOTHING:
                 break;
@@ -247,6 +267,10 @@ static AkinatorFunctions akinator_chose_function(void)
 
         case 'M':
             return AKINATOR_FUNCTIONS_MAKE_DUMP;
+            break;
+
+        case 'D':
+            return AKINATOR_FUNCTIONS_DEFINITION;
             break;
 
         case (char) NULL:
@@ -404,7 +428,6 @@ static AError_t akinator_add_object(Tree * tree, TreeNode * node, char * new_obj
         (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_RIGHT, last_object_name)) ||
         (tree_errors = tree_set_node_value(node, difference)))
     {
-
         aktor_errors |= AKINATOR_ERRORS_TREE_ERROR;
         return aktor_errors;
     }
@@ -488,6 +511,8 @@ static void akinator_print_tree_nodes(const TreeNode * node, FILE * fp)
     {
         akinator_print_tree_nodes(node->left, fp);
     }
+
+    return;
 }
 
 static void akinator_print_tree_edges(const TreeNode * node, FILE * fp)
@@ -505,4 +530,183 @@ static void akinator_print_tree_edges(const TreeNode * node, FILE * fp)
         fprintf(fp, "    node%p:<r> -> node%p;\n", node, node->right);
         akinator_print_tree_edges(node->right, fp);
     }
+
+    return;
+}
+
+
+static AError_t find_object(const Tree * tree, Stack * stk, const char * object_name)
+{
+    MY_ASSERT(tree);
+    MY_ASSERT(stk);
+    MY_ASSERT(object_name);
+
+    AError_t aktor_errors = 0;
+    bool is_founded = false;
+
+    aktor_errors = find_object_recursive(tree->root, stk, object_name, &is_founded);
+
+    printf("Is founded %d\n", is_founded);
+    if (!is_founded)
+        aktor_errors |= AKINATOR_ERRORS_INVALID_OBJECT;
+
+    return aktor_errors;
+}
+
+
+static AError_t find_object_recursive(const TreeNode * node, Stack * stk, const char * object_name, bool * is_founded)
+{
+    MY_ASSERT(node);
+    MY_ASSERT(stk);
+    MY_ASSERT(object_name);
+    MY_ASSERT(is_founded);
+
+    AError_t aktor_errors = 0;
+    Error_t stk_errors = 0;
+
+    if (!(*is_founded) && !strcmp(node->value, object_name))
+    {
+        *is_founded = true;
+        printf("FOUNDED.\n");
+        return aktor_errors;
+    }
+
+    printf("NOT FOUNDED\n");
+
+    if (node->left && !(*is_founded))
+    {
+        if (aktor_errors = find_object_recursive(node->left, stk, object_name, is_founded))
+            return aktor_errors;
+
+        if (*is_founded)
+        {
+            if (stack_push(stk, (Elem_t) TREE_NODE_BRANCH_LEFT))
+            {
+                aktor_errors |= AKINATOR_ERRORS_STACK_ERROR;
+                show_dump(stk, &stk_errors);
+                return aktor_errors;
+            }
+            printf("PUSHED %lf\n", (Elem_t) TREE_NODE_BRANCH_LEFT);
+        }
+    }
+
+    if (node->right && !(*is_founded))
+    {
+        if (aktor_errors = find_object_recursive(node->right, stk, object_name, is_founded))
+            return aktor_errors;
+
+        if (*is_founded)
+        {
+            if (stk_errors = stack_push(stk, (Elem_t) TREE_NODE_BRANCH_RIGHT))
+            {
+                aktor_errors |= AKINATOR_ERRORS_STACK_ERROR;
+                show_dump(stk, &stk_errors);
+                return aktor_errors;
+            }
+            printf("PUSHED %lf\n", (Elem_t) TREE_NODE_BRANCH_RIGHT);
+        }
+    }
+
+    return aktor_errors;
+}
+
+
+static AError_t print_definition(const Tree * tree, Stack * stk)
+{
+    MY_ASSERT(tree);
+    MY_ASSERT(stk);
+
+    return print_definition_recursive(tree->root, stk);
+}
+
+
+static AError_t print_definition_recursive(const TreeNode * node, Stack * stk)
+{
+    MY_ASSERT(node);
+    MY_ASSERT(stk);
+
+    AError_t aktor_errors = 0;
+    Elem_t val = 2;
+    Error_t stk_errors = 0;
+
+    if (stk->size == 0)
+    {
+        output_message(".\n\n");
+        return aktor_errors;
+    }
+
+    show_dump(stk, &stk_errors);
+    if (stk_errors = stack_pop(stk, &val))
+    {
+        aktor_errors |= AKINATOR_ERRORS_STACK_ERROR;
+        show_dump(stk, &stk_errors);
+        return aktor_errors;
+    }
+    show_dump(stk, &stk_errors);
+    printf("val = " ELEM_SPEC "\n", val);
+
+    switch ((TreeNodeBranches) val)
+    {
+        case TREE_NODE_BRANCH_LEFT:
+            output_message(node->value);
+            output_message(", ");
+            print_definition_recursive(node->left, stk);
+            break;
+
+        case TREE_NODE_BRANCH_RIGHT:
+            output_message("not ");
+            output_message(node->value);
+            output_message(", ");
+            print_definition_recursive(node->right, stk);
+            break;
+
+        default:
+            MY_ASSERT(0 && "UNREACHABLE");
+            break;
+    }
+
+    return aktor_errors;
+}
+
+
+static AError_t define_object(const Tree * tree, const char * object_name)
+{
+    MY_ASSERT(tree);
+    MY_ASSERT(object_name);
+
+    AError_t aktor_errors = 0;
+    Error_t stk_errors = 0;
+    Stack stk = {};
+
+    if (stk_errors = stack_ctor(&stk))
+    {
+        aktor_errors |= AKINATOR_ERRORS_STACK_ERROR;
+        show_dump(&stk, &stk_errors);
+        return aktor_errors;
+    }
+
+    aktor_errors = find_object(tree, &stk, object_name);
+    printf("aktor errors %d\n", aktor_errors & AKINATOR_ERRORS_INVALID_OBJECT);
+    if (aktor_errors & AKINATOR_ERRORS_INVALID_OBJECT)
+        return aktor_errors;
+
+    if (!(aktor_errors & AKINATOR_ERRORS_INVALID_OBJECT))
+    {
+        output_message(object_name);
+        output_message(ENG_AKINATOR_REPLICS.definition);
+        print_definition(tree, &stk);
+    }
+    else
+    {
+        output_message(ENG_AKINATOR_REPLICS.invalid_object);
+    }
+
+    if (stk_errors = stack_dtor(&stk))
+    {
+        aktor_errors |= AKINATOR_ERRORS_STACK_ERROR;
+        show_dump(&stk, &stk_errors);
+        return aktor_errors;
+    }
+
+    return aktor_errors;
 }

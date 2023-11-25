@@ -3,7 +3,6 @@
 
     #include <stdio.h>
 
-
     typedef char * Tree_t;
     typedef int TError_t;
 
@@ -20,15 +19,14 @@
     };
 
     enum TreeNodeBranches {
-        TREE_NODE_BRANCH_LEFT,
-        TREE_NODE_BRANCH_RIGHT,
+        TREE_NODE_BRANCH_LEFT  = -1,
+        TREE_NODE_BRANCH_RIGHT =  1,
     };
 
     struct TreeNode {
         Tree_t value;
         TreeNode * right;
         TreeNode * left;
-        char BUS[4];
     };
 
     struct Tree {

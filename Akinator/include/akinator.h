@@ -10,13 +10,16 @@
         AKINATOR_ERRORS_INVALID_SYNTAXIS       = 1 << 1,
         AKINATOR_ERRORS_TREE_ERROR             = 1 << 2,
         AKINATOR_ERRORS_INVALID_INPUT          = 1 << 3,
+        AKINATOR_ERRORS_STACK_ERROR            = 1 << 4,
+        AKINATOR_ERRORS_INVALID_OBJECT         = 1 << 5,
     };
 
     enum AkinatorFunctions {
-        AKINATOR_FUNCTIONS_NOTHING   = 0,
-        AKINATOR_FUNCTIONS_GUESS     = 1,
-        AKINATOR_FUNCTIONS_QUIT      = 2,
-        AKINATOR_FUNCTIONS_MAKE_DUMP = 3,
+        AKINATOR_FUNCTIONS_NOTHING    = 0,
+        AKINATOR_FUNCTIONS_GUESS      = 1,
+        AKINATOR_FUNCTIONS_QUIT       = 2,
+        AKINATOR_FUNCTIONS_MAKE_DUMP  = 3,
+        AKINATOR_FUNCTIONS_DEFINITION = 4,
     };
 
     enum AkinatorAnswers {
