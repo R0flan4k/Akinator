@@ -1,1 +1,1 @@
-{ { Victor_Korneplod } human { { matan } school_lesson { skibidi_dop } } }
+{ { Victor_Korneplod } human { { matan } school lesson { skibidi dop } } }

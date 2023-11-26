@@ -12,6 +12,7 @@
         AKINATOR_ERRORS_INVALID_INPUT          = 1 << 3,
         AKINATOR_ERRORS_STACK_ERROR            = 1 << 4,
         AKINATOR_ERRORS_INVALID_OBJECT         = 1 << 5,
+        AKINATOR_ERRORS_CANT_ALLOCATE_MEMORY   = 1 << 6,
     };
 
     enum AkinatorFunctions {

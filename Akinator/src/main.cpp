@@ -21,13 +21,12 @@ int main(int argc, char * argv[])
     if (!(buffer_size = text_file_to_buffer(SOURCE_FILE_NAME, &buffer)))
     {
         aktor_errors |= AKINATOR_ERRORS_CANT_CONVERT_TEXT_FILE;
-
         return aktor_errors;
     }
 
     Tree akinator_tree = {};
 
-    op_new_tree(&akinator_tree, "");
+    op_new_tree(&akinator_tree, NULL);
 
     // printf("%ld\n", buffer_size);             //
     // MY_ASSERT(buffer);                          //

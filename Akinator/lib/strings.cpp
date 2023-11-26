@@ -86,11 +86,22 @@ const char * next_word(const char * buffer)
 }
 
 
-const char * skip_spaces(const char * buffer)
+char * skip_spaces(char * buffer)
 {
     MY_ASSERT(buffer);
 
     while (isspace(*buffer) && *buffer != EOF && *buffer != '\0')
+        buffer++;
+
+    return (buffer);
+}
+
+
+char * skip_no_spaces(char * buffer)
+{
+    MY_ASSERT(buffer);
+
+    while (!isspace(*buffer) && *buffer!= EOF && *buffer != '\0')
         buffer++;
 
     return (buffer);
@@ -107,4 +118,23 @@ char * make_file_extension(char * target, const char * file_name, const char * e
     strcat(target, extension);
 
     return target;
+}
+
+
+size_t get_input(char * buffer, size_t buffer_size)
+{
+    MY_ASSERT(buffer);
+
+    char character = 0;
+    size_t i = 0;
+
+    while ((character = getchar()) != '\n' && character != EOF &&
+           i < buffer_size)
+    {
+        *buffer = character;
+        buffer++;
+        i++;
+    }
+
+    return i;
 }

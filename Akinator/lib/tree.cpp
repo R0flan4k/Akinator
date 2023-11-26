@@ -8,46 +8,14 @@
 const char * TREE_DUMP_FILE_NAME = "./graphviz/tree_dump";
 
 const size_t TRASH_VALUE = 0xAB1BA5;
-const Tree_t TRASH_ELEM_VALUE = "nill";
 const size_t BUFFER_SIZE = 256;
 
-static void op_elem_assigment(Tree_t * dst, Tree_t const src);
-// static int op_elem_comparison(const Tree_t * elem1, const Tree_t * elem2);
 static size_t tree_free(TreeNode * main_node);
 static size_t tree_free_iternal(TreeNode * node, size_t * count);
 static void print_tree_nodes(const TreeNode * node, FILE * fp);
 static void print_tree_edges(const TreeNode * node, FILE * fp);
 static TError_t tree_create_node(Tree * tree, TreeNode * * node_ptr);
 static void print_text_nodes(const TreeNode * main_node);
-
-
-static void op_elem_assigment(Tree_t * dst, Tree_t const src)
-{
-    MY_ASSERT(dst);
-
-    strcpy(*dst, src);
-}
-
-
-// static int op_elem_comparison(const Tree_t * elem1, const Tree_t * elem2)
-// {
-//     MY_ASSERT(elem1);
-//     MY_ASSERT(elem2);
-
-//     return strcmp(*elem1, *elem2);
-// }
-
-
-TError_t tree_set_node_value(TreeNode * node, const Tree_t value)
-{
-    MY_ASSERT(node);
-
-    TError_t errors = 0;
-
-    op_elem_assigment(&node->value, value);
-
-    return errors;
-}
 
 
 TError_t op_new_tree(Tree * tree, const Tree_t root_value)
@@ -69,18 +37,10 @@ TError_t op_new_tree(Tree * tree, const Tree_t root_value)
     }
     tree->size = 1;
 
-
-    if (!(tree->root->value = (Tree_t) calloc(MAX_STR_SIZE, sizeof(char))))
-    {
-        free(tree->root);
-        errors |= TREE_ERRORS_CANT_ALLOCATE_MEMORY;
-        return errors;
-    }
-
     tree->root->left = NULL;
     tree->root->right = NULL;
 
-    op_elem_assigment(&tree->root->value, root_value);
+    tree->root->value = root_value;
 
     return errors;
 }
@@ -111,9 +71,8 @@ static size_t tree_free_iternal(TreeNode * node, size_t * count)
         tree_free_iternal(node->right, count);
     }
 
-    free(node->value);
     free(node);
-    count++;
+    (*count)++;
 
     return *count;
 }
@@ -171,15 +130,7 @@ static TError_t tree_create_node(Tree * tree, TreeNode * * node_ptr)
     (*node_ptr)->left = NULL;
     (*node_ptr)->right = NULL;
 
-    if (!((*node_ptr)->value = (Tree_t) calloc(MAX_STR_SIZE, sizeof(char))))
-    {
-        free(*node_ptr);
-        errors |= TREE_ERRORS_CANT_ALLOCATE_MEMORY;
-
-        return errors;
-    }
-
-    op_elem_assigment(&(*node_ptr)->value, TRASH_ELEM_VALUE);
+    (*node_ptr)->value = 0;
 
     tree->size++;
 
@@ -210,7 +161,7 @@ TError_t tree_insert(Tree * tree, TreeNode * node, TreeNodeBranches mode, const 
             if (errors = tree_create_node(tree, &node->left))
                 return errors;
 
-            op_elem_assigment(&node->left->value, value);
+            node->left->value = value;
 
             break;
 
@@ -223,7 +174,8 @@ TError_t tree_insert(Tree * tree, TreeNode * node, TreeNodeBranches mode, const 
 
             if (errors = tree_create_node(tree, &node->right))
                 return errors;
-            op_elem_assigment(&node->right->value, value);
+
+            node->right->value = value;
 
             break;
 
@@ -309,17 +261,17 @@ void tree_dump_iternal(const Tree * tree,
 
     fclose(fp);
 
-    static size_t tree_dumps_count = 0;
+    static size_t dumps_count = 0;
     char png_dump_file_name[64] = "";
     char command_string[BUFFER_SIZE] = "";
     char extension_string[BUFFER_SIZE] = "";
 
-    sprintf(extension_string, "%zd.png", tree_dumps_count);
+    sprintf(extension_string, "%zd.png", dumps_count);
     make_file_extension(png_dump_file_name, TREE_DUMP_FILE_NAME, extension_string);
     sprintf(command_string, "dot %s -T png -o %s", dot_file_name, png_dump_file_name);
     system(command_string);
 
-    tree_dumps_count++;
+    dumps_count++;
 }
 
 
@@ -327,22 +279,16 @@ static void print_tree_nodes(const TreeNode * node, FILE * fp)
 {
     MY_ASSERT(node);
 
-    // printf("printing: %p\n"
-    //        "          %p\n"
-    //        "          %p\n", node->value, node->left, node->right);
     fprintf(fp, "    node%p [ label = \"{[%p] " TREE_SPEC " | { <l> left[%p] | right[%p]  }}\" ]\n",
             node, node, node->value, node->left, node->right);
-            // printf("printed\n");
 
     if (node->right)
     {
-        // printf("%p\n", node->right);
         print_tree_nodes(node->right, fp);
     }
 
     if (node->left)
     {
-        // printf("%p\n", node->left);
         print_tree_nodes(node->left, fp);
     }
 }

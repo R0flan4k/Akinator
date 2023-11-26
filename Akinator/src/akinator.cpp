@@ -10,24 +10,26 @@
 #include "file_processing.h"
 #include "stack.h"
 
-const size_t MAX_STRING_SIZE = 64;
-const Tree_t AKINATOR_TRASH_VALUE = "nill";
+const size_t MAX_STRING_SIZE = 256;
+const char * AKINATOR_TRASH_VALUE = "nill";
 const char * AKINATOR_FUNCTIONS = "QGMD";
 const char * AKINATOR_SUPPORTED_ANSWERS = "YN";
 const char * AKINATOR_DUMP_FILE_NAME = "./graphviz/akinator_dump";
-const int ROOT_STACK_VALUE = 0;
+const size_t BUFFER_EXPAND_COEFFICIENT = 2;
 
-static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, const char * * buffer_ptr);
+static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, char * * buffer_ptr);
 static bool is_open_braket(const char * buffer_ptr);
 static bool is_close_braket(const char * buffer_ptr);
 static void output_message(const char * message);
 static char get_answer(const char * posible_answers, size_t size);
 static AkinatorFunctions akinator_chose_function(void);
-static AError_t akinator_guess(Tree * tree);
-static AError_t recursive_guessing(Tree * tree, TreeNode * node);
+static AError_t akinator_guess(Tree * tree, char * * buffer, char * * buffer_ptr, size_t * buffer_size);
+static AError_t recursive_guessing(Tree * tree, TreeNode * node, char * * buffer, char * * buffer_ptr, size_t * buffer_size);
 static AkinatorAnswers akinator_get_answer(void);
-static AError_t akinator_add_object(Tree * tree, TreeNode * node, char * new_object_name,
-                                    char * last_object_name, char * difference);
+static AError_t akinator_add_object(Tree * tree, TreeNode * node, const char * last_object_name,
+                                    const char * new_object_name, size_t new_object_name_size,
+                                    const char * difference, size_t difference_size,
+                                    char * * buffer, char * * buffer_ptr, size_t * buffer_size);
 static void akinator_print_tree_nodes(const TreeNode * node, FILE * fp);
 static void akinator_print_tree_edges(const TreeNode * node, FILE * fp);
 static AError_t find_object(const Tree * tree, Stack * stk, const char * object_name);
@@ -35,6 +37,7 @@ static AError_t find_object_recursive(const TreeNode * node, Stack * stk, const 
 static AError_t print_definition(const Tree * tree, Stack * stk);
 static AError_t print_definition_recursive(const TreeNode * node, Stack * stk);
 static AError_t define_object(const Tree * tree, const char * object_name);
+static AError_t expand_new_objects_buffer(char * * buffer, char * * buffer_ptr, size_t * buffer_size);
 
 
 AError_t create_akinator_tree(Tree * tree, char * buffer)
@@ -42,7 +45,7 @@ AError_t create_akinator_tree(Tree * tree, char * buffer)
     MY_ASSERT(tree);
     MY_ASSERT(buffer);
 
-    const char * buffer_ptr = buffer;
+    char * buffer_ptr = buffer;
     AError_t aktor_errors = 0;
 
     buffer_ptr = skip_spaces(buffer_ptr);
@@ -65,15 +68,13 @@ AError_t create_akinator_tree(Tree * tree, char * buffer)
 }
 
 
-static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, const char * * buffer_ptr)
+static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, char * * buffer_ptr)
 {
     MY_ASSERT(buffer_ptr);
     MY_ASSERT(node);
 
     AError_t aktor_errors = 0;
     TError_t tree_errors  = 0;
-    int token_size = 0;
-    char value[MAX_STR_SIZE] = "";
 
     *buffer_ptr = skip_spaces(*buffer_ptr);
 
@@ -81,7 +82,7 @@ static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, co
     {
         (*buffer_ptr)++;
 
-        if (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_LEFT, AKINATOR_TRASH_VALUE))
+        if (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_LEFT, NULL))
         {
             tree_dump(tree);
             aktor_errors |= AKINATOR_ERRORS_TREE_ERROR;
@@ -96,13 +97,25 @@ static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, co
 
     *buffer_ptr = skip_spaces(*buffer_ptr);
 
-    if (!sscanf(*buffer_ptr, TREE_SPEC "%n", value, &token_size))
+    if (is_open_braket(*buffer_ptr) || is_close_braket(*buffer_ptr))
     {
         aktor_errors |= AKINATOR_ERRORS_INVALID_SYNTAXIS;
         return aktor_errors;
     }
-    tree_set_node_value(node, value);
-    *buffer_ptr += token_size;
+
+    node->value = *buffer_ptr;
+    *buffer_ptr = skip_no_spaces(*buffer_ptr);
+
+    char * tmp_buffer_ptr = *buffer_ptr;
+    tmp_buffer_ptr = skip_spaces(tmp_buffer_ptr);
+    while (!is_open_braket(tmp_buffer_ptr) && !is_close_braket(tmp_buffer_ptr))
+    {
+        tmp_buffer_ptr = skip_no_spaces(tmp_buffer_ptr);
+        *buffer_ptr = tmp_buffer_ptr;
+        tmp_buffer_ptr = skip_spaces(tmp_buffer_ptr);
+    }
+    **buffer_ptr = '\0';
+    (*buffer_ptr)++;
 
     *buffer_ptr = skip_spaces(*buffer_ptr);
 
@@ -110,7 +123,7 @@ static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, co
     {
         (*buffer_ptr)++;
 
-        if (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_RIGHT, AKINATOR_TRASH_VALUE))
+        if (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_RIGHT, NULL))
         {
             tree_dump(tree);
             aktor_errors |= AKINATOR_ERRORS_TREE_ERROR;
@@ -127,6 +140,7 @@ static AError_t create_akinator_nodes_recursive(Tree * tree, TreeNode * node, co
 
     if (!is_close_braket(*buffer_ptr))
     {
+        printf("%d\n", **buffer_ptr);
         aktor_errors |= AKINATOR_ERRORS_INVALID_SYNTAXIS;
         return aktor_errors;
     }
@@ -160,6 +174,16 @@ AError_t akinator_start_game(Tree * tree)
 
     AkinatorFunctions choosen_function = AKINATOR_FUNCTIONS_NOTHING;
 
+    char * new_objects_buffer = NULL;
+    size_t new_objects_buffer_size = MAX_STRING_SIZE;
+    if (!(new_objects_buffer = (char *) calloc(MAX_STRING_SIZE, sizeof(char))))
+    {
+        aktor_errors |= AKINATOR_ERRORS_CANT_ALLOCATE_MEMORY;
+        return aktor_errors;
+    }
+    char * new_objects_buffer_ptr = new_objects_buffer;
+
+
     while ((choosen_function = akinator_chose_function()) != AKINATOR_FUNCTIONS_QUIT)
     {
 
@@ -168,10 +192,13 @@ AError_t akinator_start_game(Tree * tree)
             case AKINATOR_FUNCTIONS_GUESS:
                 output_message(ENG_AKINATOR_REPLICS.start_guessing);
 
-                if (aktor_errors = akinator_guess(tree))
+                if (aktor_errors = akinator_guess(tree, &new_objects_buffer,
+                                                  &new_objects_buffer_ptr, &new_objects_buffer_size))
                 {
+                    free(new_objects_buffer);
                     return aktor_errors;
                 }
+
                 break;
 
             case AKINATOR_FUNCTIONS_MAKE_DUMP:
@@ -188,6 +215,7 @@ AError_t akinator_start_game(Tree * tree)
 
                 if (aktor_errors & ~AKINATOR_ERRORS_INVALID_OBJECT)
                 {
+                    free(new_objects_buffer);
                     return aktor_errors;
                 }
 
@@ -208,6 +236,8 @@ AError_t akinator_start_game(Tree * tree)
 
         output_message(ENG_AKINATOR_REPLICS.show_menu);
     }
+
+    free(new_objects_buffer);
 
     output_message(ENG_AKINATOR_REPLICS.say_goodbye);
 
@@ -288,13 +318,18 @@ static AkinatorFunctions akinator_chose_function(void)
 }
 
 
-static AError_t akinator_guess(Tree * tree)
+static AError_t akinator_guess(Tree * tree, char * * buffer, char * * buffer_ptr, size_t * buffer_size)
 {
     MY_ASSERT(tree);
+    MY_ASSERT(buffer);
+    MY_ASSERT(*buffer);
+    MY_ASSERT(buffer_ptr);
+    MY_ASSERT(*buffer_ptr);
+    MY_ASSERT(buffer_size);
 
     AError_t aktor_errors = 0;
 
-    if (aktor_errors = recursive_guessing(tree, tree->root))
+    if (aktor_errors = recursive_guessing(tree, tree->root, buffer, buffer_ptr, buffer_size))
     {
         return aktor_errors;
     }
@@ -303,15 +338,20 @@ static AError_t akinator_guess(Tree * tree)
 }
 
 
-static AError_t recursive_guessing(Tree * tree, TreeNode * node)
+static AError_t recursive_guessing(Tree * tree, TreeNode * node, char * * buffer, char * * buffer_ptr, size_t * buffer_size)
 {
     MY_ASSERT(tree);
     MY_ASSERT(node);
+    MY_ASSERT(buffer);
+    MY_ASSERT(*buffer);
+    MY_ASSERT(buffer_ptr);
+    MY_ASSERT(*buffer_ptr);
+    MY_ASSERT(buffer_size);
 
     AError_t aktor_errors = 0;
     char message[MAX_STRING_SIZE] = "";
 
-    sprintf(message, "%s " TREE_SPEC "? ",
+    sprintf(message, "%s %s? ",
             ENG_AKINATOR_REPLICS.ask, node->value);
 
     output_message(message);
@@ -331,7 +371,8 @@ static AError_t recursive_guessing(Tree * tree, TreeNode * node)
                 return aktor_errors;
             }
 
-            if (aktor_errors = recursive_guessing(tree, node->left))
+            if (aktor_errors = recursive_guessing(tree, node->left, buffer,
+                                                  buffer_ptr, buffer_size))
             {
                 return aktor_errors;
             }
@@ -343,10 +384,11 @@ static AError_t recursive_guessing(Tree * tree, TreeNode * node)
             {
                 output_message(ENG_AKINATOR_REPLICS.failure);
 
+                MY_ASSERT(node->value);
+                Tree_t last_object_name = node->value;
+
                 char new_object_name[MAX_STR_SIZE] = "";
-                scanf("%s", new_object_name);
-                char last_object_name[MAX_STR_SIZE] = "";
-                strncpy(last_object_name, node->value, MAX_STR_SIZE);
+                size_t new_object_name_size = get_input(new_object_name, MAX_STR_SIZE);
 
                 char difference_message[MAX_STRING_SIZE] = "";
                 sprintf(difference_message, "%s %s %s %s?\n",
@@ -355,9 +397,12 @@ static AError_t recursive_guessing(Tree * tree, TreeNode * node)
                 output_message(difference_message);
 
                 char difference[MAX_STR_SIZE] = "";
-                scanf("%s", difference);
+                size_t difference_size = get_input(difference, MAX_STR_SIZE);
 
-                if (aktor_errors = akinator_add_object(tree, node, new_object_name, last_object_name, difference))
+                if (aktor_errors = akinator_add_object(tree, node, last_object_name,
+                                                       new_object_name, new_object_name_size,
+                                                       difference, difference_size,
+                                                       buffer, buffer_ptr, buffer_size))
                 {
                     return aktor_errors;
                 }
@@ -367,7 +412,8 @@ static AError_t recursive_guessing(Tree * tree, TreeNode * node)
                 return aktor_errors;
             }
 
-            if (aktor_errors = recursive_guessing(tree, node->right))
+            if (aktor_errors = recursive_guessing(tree, node->right, buffer,
+                                                  buffer_ptr, buffer_size))
             {
                 return aktor_errors;
             }
@@ -414,25 +460,78 @@ static AkinatorAnswers akinator_get_answer(void)
 }
 
 
-static AError_t akinator_add_object(Tree * tree, TreeNode * node, char * new_object_name,
-                                    char * last_object_name, char * difference)
+static AError_t akinator_add_object(Tree * tree, TreeNode * node, const char * last_object_name,
+                                    const char * new_object_name, size_t new_object_name_size,
+                                    const char * difference, size_t difference_size,
+                                    char * * buffer, char * * buffer_ptr, size_t * buffer_size)
 {
     MY_ASSERT(tree);
     MY_ASSERT(node);
     MY_ASSERT(new_object_name);
     MY_ASSERT(last_object_name);
     MY_ASSERT(difference);
+    MY_ASSERT(buffer);
+    MY_ASSERT(*buffer);
+    MY_ASSERT(buffer_ptr);
+    MY_ASSERT(*buffer_ptr);
+    MY_ASSERT(buffer_size);
 
     TError_t tree_errors = 0;
     AError_t aktor_errors = 0;
 
-    if ((tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_LEFT, new_object_name)) ||
-        (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_RIGHT, last_object_name)) ||
-        (tree_errors = tree_set_node_value(node, difference)))
+    if (*buffer_size - 2 < *buffer_ptr - *buffer + difference_size + new_object_name_size)/////////////////////////////////////
+        aktor_errors = expand_new_objects_buffer(buffer, buffer_ptr, buffer_size);
+
+    if (aktor_errors)
+        return aktor_errors;
+
+    sprintf(*buffer_ptr, "%s", new_object_name);
+    if (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_LEFT, *buffer_ptr))
     {
         aktor_errors |= AKINATOR_ERRORS_TREE_ERROR;
         return aktor_errors;
     }
+    *buffer_ptr += new_object_name_size;
+    **buffer_ptr = '\0';
+    (*buffer_ptr)++;
+
+    sprintf(*buffer_ptr, "%s", difference);
+    node->value = *buffer_ptr;
+    *buffer_ptr += difference_size;
+    **buffer_ptr = '\0';
+    (*buffer_ptr)++;
+
+    if (tree_errors = tree_insert(tree, node, TREE_NODE_BRANCH_RIGHT, last_object_name))
+    {
+        aktor_errors |= AKINATOR_ERRORS_TREE_ERROR;
+        return aktor_errors;
+    }
+
+    return aktor_errors;
+}
+
+
+static AError_t expand_new_objects_buffer(char * * buffer, char * * buffer_ptr, size_t * buffer_size)
+{
+    MY_ASSERT(buffer);
+    MY_ASSERT(*buffer);
+    MY_ASSERT(buffer_ptr);
+    MY_ASSERT(*buffer_ptr);
+    MY_ASSERT(buffer_size);
+
+    AError_t aktor_errors = 0;
+
+    size_t last_position = *buffer_ptr - *buffer;
+    char * pointer = *buffer;
+
+    if (!(pointer = (char *) realloc(buffer, *buffer_size * BUFFER_EXPAND_COEFFICIENT)))
+    {
+        aktor_errors |= AKINATOR_ERRORS_CANT_ALLOCATE_MEMORY;
+        return aktor_errors;
+    }
+    *buffer = pointer;
+    *buffer_ptr = *buffer + last_position;
+    *buffer_size *= BUFFER_EXPAND_COEFFICIENT;
 
     return aktor_errors;
 }
@@ -444,7 +543,7 @@ void akinator_dump(Tree * tree)
 
     FILE * fp = NULL;
 
-    char dot_file_name[64] = "";
+    char dot_file_name[MAX_STR_SIZE] = "";
     make_file_extension(dot_file_name, AKINATOR_DUMP_FILE_NAME, ".dot");
 
     if (!(fp = file_open(dot_file_name, "wb")))
@@ -476,7 +575,7 @@ void akinator_dump(Tree * tree)
     fclose(fp);
 
     static size_t akinator_dumps_count = 0;
-    char png_dump_file_name[MAX_STRING_SIZE] = "";
+    char png_dump_file_name[MAX_STR_SIZE] = "";
     char command_string[MAX_STRING_SIZE] = "";
     char extension_string[MAX_STRING_SIZE] = "";
 
@@ -492,15 +591,16 @@ void akinator_dump(Tree * tree)
 static void akinator_print_tree_nodes(const TreeNode * node, FILE * fp)
 {
     MY_ASSERT(node);
+    MY_ASSERT(node->value);
 
     if (node->left && node->right)
     {
-        fprintf(fp, "    node%p [ label = \"{" TREE_SPEC "? | { <l> YES | NO  }}\" ]\n",
+        fprintf(fp, "    node%p [ label = \"{ %s? | { <l> YES | NO  }}\" ]\n",
                 node, node->value);
     }
     else
     {
-        fprintf(fp, "    node%p [ label = \"{" TREE_SPEC "}\", color = green ]\n",
+        fprintf(fp, "    node%p [ label = \"{ %s }\", color = green ]\n",
                 node, node->value);
     }
 
