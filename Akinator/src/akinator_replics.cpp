@@ -38,5 +38,9 @@ const AkinatorReplics ENG_AKINATOR_REPLICS = {
     .definition =          " is: ",
 
     .invalid_object =      "There is no this object.\n\n",
+
+    .ask_save_necessity =  "Do you want to save your data changes?\n",
+
+    .save_success =        "Your changes successfully saved.\n",
 };
 

@@ -17,6 +17,8 @@
         const char * ask_definition_name;
         const char * definition;
         const char * invalid_object;
+        const char * ask_save_necessity;
+        const char * save_success;
     };
 
     extern const AkinatorReplics ENG_AKINATOR_REPLICS;
