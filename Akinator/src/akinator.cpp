@@ -43,6 +43,7 @@ static bool get_save_necessity(void);
 static AError_t akinator_save_changes(const Tree * tree, char * data_file_name);
 static AError_t akinator_save_changes_recursive(const TreeNode * node, FILE * fp, int * recursion_depth);
 static void fprint_tabulation(FILE * fp, int recursion_depth);
+static AError_t akinator_nodes_vtor(const TreeNode * node);
 
 
 AError_t create_akinator_tree(Tree * tree, char * buffer)
@@ -174,6 +175,11 @@ AError_t akinator_start_game(Tree * tree)
     AError_t aktor_errors = 0;
     char object_name[MAX_STR_SIZE] = "";
     size_t object_name_size = 0;
+
+    if (aktor_errors = akinator_vtor(tree))
+    {
+        return aktor_errors;
+    }
 
     output_message(ENG_AKINATOR_REPLICS.say_hello);
     output_message(ENG_AKINATOR_REPLICS.show_menu);
@@ -939,4 +945,68 @@ static void fprint_tabulation(FILE * fp, int recursion_depth)
     }
 
     return;
+}
+
+
+AError_t akinator_vtor(const Tree * tree)
+{
+    MY_ASSERT(tree);
+
+    AError_t aktor_errors = 0;
+
+    if (tree_vtor(tree))
+    {
+        aktor_errors |= AKINATOR_ERRORS_TREE_ERROR;
+        tree_dump(tree);
+        return aktor_errors;
+    }
+
+    if (aktor_errors = akinator_nodes_vtor(tree->root))
+    {
+        return aktor_errors;
+    }
+
+    return aktor_errors;
+}
+
+
+static AError_t akinator_nodes_vtor(const TreeNode * node)
+{
+    MY_ASSERT(node);
+
+    AError_t aktor_errors = 0;
+
+    if (node->left)
+    {
+        if (aktor_errors = akinator_nodes_vtor(node->left))
+        {
+            return aktor_errors;
+        }
+    }
+    else
+    {
+        if (node->right)
+        {
+            aktor_errors |= AKINATOR_ERRORS_INVALID_OBJECT;
+            return aktor_errors;
+        }
+    }
+
+    if (node->right)
+    {
+        if (aktor_errors = akinator_nodes_vtor(node->right))
+        {
+            return aktor_errors;
+        }
+    }
+    else
+    {
+        if (node->left)
+        {
+            aktor_errors |= AKINATOR_ERRORS_INVALID_OBJECT;
+            return aktor_errors;
+        }
+    }
+
+    return aktor_errors;
 }

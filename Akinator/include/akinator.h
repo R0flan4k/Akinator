@@ -33,5 +33,6 @@
     AError_t create_akinator_tree(Tree * tree, char * buffer);
     AError_t akinator_start_game(Tree * tree);
     void akinator_dump(Tree * tree);
+    AError_t akinator_vtor(const Tree * tree);
 
 #endif

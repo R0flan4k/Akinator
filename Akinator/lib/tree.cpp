@@ -98,7 +98,7 @@ TError_t op_delete_tree(Tree * tree)
 }
 
 
-TError_t tree_vtor(Tree * tree)
+TError_t tree_vtor(const Tree * tree)
 {
     MY_ASSERT(tree);
 
