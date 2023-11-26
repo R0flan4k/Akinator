@@ -33,11 +33,11 @@ static AError_t akinator_add_object(Tree * tree, TreeNode * node, const char * l
                                     char * * buffer, char * * buffer_ptr, size_t * buffer_size);
 static void akinator_print_tree_nodes(const TreeNode * node, FILE * fp);
 static void akinator_print_tree_edges(const TreeNode * node, FILE * fp);
-static AError_t find_object(const Tree * tree, Stack * stk, const char * object_name, size_t object_name_size);
-static AError_t find_object_recursive(const TreeNode * node, Stack * stk, const char * object_name, size_t object_name_size, bool * is_founded);
+static AError_t find_object(const Tree * tree, Stack * stk, char * object_name, size_t object_name_size);
+static AError_t find_object_recursive(const TreeNode * node, Stack * stk, char * object_name, size_t object_name_size, bool * is_founded);
 static AError_t print_definition(const Tree * tree, Stack * stk);
 static AError_t print_definition_recursive(const TreeNode * node, Stack * stk);
-static AError_t define_object(const Tree * tree, const char * object_name, size_t object_name_size);
+static AError_t define_object(const Tree * tree, char * object_name, size_t object_name_size);
 static AError_t expand_new_objects_buffer(char * * buffer, char * * buffer_ptr, size_t * buffer_size);
 static bool get_save_necessity(void);
 static AError_t akinator_save_changes(const Tree * tree, char * data_file_name);
@@ -215,17 +215,18 @@ AError_t akinator_start_game(Tree * tree)
 
             case AKINATOR_FUNCTIONS_DEFINITION:
                 output_message(ENG_AKINATOR_REPLICS.ask_definition_name);
+                memset(object_name, 0, MAX_STR_SIZE);
                 object_name_size = get_input(object_name, MAX_STR_SIZE);
 
                 aktor_errors = define_object(tree, object_name, object_name_size);
+                aktor_errors &= ~AKINATOR_ERRORS_INVALID_OBJECT;
 
-                if (aktor_errors & ~AKINATOR_ERRORS_INVALID_OBJECT)
+                if (aktor_errors)
                 {
                     free(new_objects_buffer);
                     return aktor_errors;
                 }
 
-                aktor_errors &= ~AKINATOR_ERRORS_INVALID_OBJECT;
 
                 break;
 
@@ -657,7 +658,7 @@ static void akinator_print_tree_edges(const TreeNode * node, FILE * fp)
 }
 
 
-static AError_t find_object(const Tree * tree, Stack * stk, const char * object_name, size_t object_name_size)
+static AError_t find_object(const Tree * tree, Stack * stk, char * object_name, size_t object_name_size)
 {
     MY_ASSERT(tree);
     MY_ASSERT(stk);
@@ -675,7 +676,7 @@ static AError_t find_object(const Tree * tree, Stack * stk, const char * object_
 }
 
 
-static AError_t find_object_recursive(const TreeNode * node, Stack * stk, const char * object_name, size_t object_name_size, bool * is_founded)
+static AError_t find_object_recursive(const TreeNode * node, Stack * stk, char * object_name, size_t object_name_size, bool * is_founded)
 {
     MY_ASSERT(node);
     MY_ASSERT(stk);
@@ -685,9 +686,11 @@ static AError_t find_object_recursive(const TreeNode * node, Stack * stk, const 
     AError_t aktor_errors = 0;
     Error_t stk_errors = 0;
 
-    if (!(*is_founded) && !strncmp(node->value, object_name, object_name_size))
+    if (!(*is_founded) && !strncmp(node->value, object_name, object_name_size) &&
+        !node->left && !node->right)
     {
         *is_founded = true;
+        strcpy(object_name, node->value);
         return aktor_errors;
     }
 
@@ -786,7 +789,7 @@ static AError_t print_definition_recursive(const TreeNode * node, Stack * stk)
 }
 
 
-static AError_t define_object(const Tree * tree, const char * object_name, size_t object_name_size)
+static AError_t define_object(const Tree * tree, char * object_name, size_t object_name_size)
 {
     MY_ASSERT(tree);
     MY_ASSERT(object_name);

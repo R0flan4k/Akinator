@@ -23,7 +23,13 @@
 	human
 	{
 		{
-			Matan
+			{
+				Chuvash chelhi
+			}
+			interesting lesson
+			{
+				Matan
+			}
 		}
 		school lesson
 		{
