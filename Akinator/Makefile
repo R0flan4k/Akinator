@@ -19,4 +19,4 @@ $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 
 .PHONY: clean
 clean:
-	@rm -f $(OBJDIR)/*.o ./graphviz/*.dot ./graphviz/*.png *.exe
+	@rm -f $(OBJDIR)/*.o ./graphviz/*.dot ./graphviz/*.png *.exe Akinator
