@@ -28,13 +28,6 @@ int main(int argc, char * argv[])
 
     op_new_tree(&akinator_tree, NULL);
 
-    // printf("%ld\n", buffer_size);             //
-    // MY_ASSERT(buffer);                          //
-    // for (long i = 0; i < buffer_size; i++)      //
-    // {                                           //
-    //     printf("%c", buffer[i]);                //
-    // }                                           //
-
     if (aktor_errors = create_akinator_tree(&akinator_tree, buffer))
     {
         tree_dump(&akinator_tree);

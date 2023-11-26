@@ -9,6 +9,7 @@
 #include "my_assert.h"
 #include "file_processing.h"
 #include "stack.h"
+#include "flags.h"
 
 const size_t MAX_STRING_SIZE = 256;
 const char * AKINATOR_TRASH_VALUE = "nill";
@@ -38,6 +39,10 @@ static AError_t print_definition(const Tree * tree, Stack * stk);
 static AError_t print_definition_recursive(const TreeNode * node, Stack * stk);
 static AError_t define_object(const Tree * tree, const char * object_name, size_t object_name_size);
 static AError_t expand_new_objects_buffer(char * * buffer, char * * buffer_ptr, size_t * buffer_size);
+static bool get_save_necessity(void);
+static AError_t akinator_save_changes(const Tree * tree, char * data_file_name);
+static AError_t akinator_save_changes_recursive(const TreeNode * node, FILE * fp, int * recursion_depth);
+static void fprint_tabulation(FILE * fp, int recursion_depth);
 
 
 AError_t create_akinator_tree(Tree * tree, char * buffer)
@@ -240,17 +245,21 @@ AError_t akinator_start_game(Tree * tree)
         output_message(ENG_AKINATOR_REPLICS.show_menu);
     }
 
-    // if (get_save_necessity())
-    // {
-    //     if (aktor_errors = akinator_save_changes(tree, SOURCE_FILE_NAME))
-    //     {
-    //         return aktor_errors;
-    //     }
-    // }
+    output_message(ENG_AKINATOR_REPLICS.ask_save_necessity);
 
-    free(new_objects_buffer);
+    if (get_save_necessity())
+    {
+        if (aktor_errors = akinator_save_changes(tree, SOURCE_FILE_NAME))
+        {
+            return aktor_errors;
+        }
+
+        output_message(ENG_AKINATOR_REPLICS.save_success);
+    }
 
     output_message(ENG_AKINATOR_REPLICS.say_goodbye);
+
+    free(new_objects_buffer);
 
     return aktor_errors;
 }
@@ -814,4 +823,117 @@ static AError_t define_object(const Tree * tree, const char * object_name, size_
     }
 
     return aktor_errors;
+}
+
+
+static bool get_save_necessity(void)
+{
+    output_message(ENG_AKINATOR_REPLICS.answer_help);
+
+    AkinatorAnswers ans = AKINATOR_ANSWERS_INVALID;
+
+    while ((ans = akinator_get_answer()) == AKINATOR_ANSWERS_INVALID)
+        output_message(ENG_AKINATOR_REPLICS.answer_help);
+
+    switch (ans)
+    {
+        case AKINATOR_ANSWERS_YES:
+            return true;
+            break;
+
+        case AKINATOR_ANSWERS_NO:
+            return false;
+            break;
+
+        case AKINATOR_ANSWERS_INVALID:
+        default:
+            MY_ASSERT(0 && "UNREACHABLE");
+            break;
+    }
+
+    return false;
+}
+
+
+static AError_t akinator_save_changes(const Tree * tree, char * data_file_name)
+{
+    MY_ASSERT(tree);
+    MY_ASSERT(data_file_name);
+
+    AError_t aktor_errors = 0;
+    FILE * fp = NULL;
+
+    if (!(fp = file_open(data_file_name, "wb")))
+    {
+        aktor_errors |= AKINATOR_ERRORS_CANT_OPEN_DATA_FILE;
+        return aktor_errors;
+    }
+
+    int recursion_depth = 0;
+
+    if (aktor_errors = akinator_save_changes_recursive(tree->root, fp, &recursion_depth))
+    {
+        fclose(fp);
+        return aktor_errors;
+    }
+
+    fclose(fp);
+
+    return aktor_errors;
+}
+
+
+static AError_t akinator_save_changes_recursive(const TreeNode * node, FILE * fp, int * recursion_depth)
+{
+    MY_ASSERT(node);
+    MY_ASSERT(node->value);
+    MY_ASSERT(fp);
+
+    AError_t aktor_errors = 0;
+
+    (*recursion_depth)++;
+
+    fprint_tabulation(fp, *recursion_depth - 1);
+    fprintf(fp, "{\n");
+
+    if (node->left)
+    {
+        if (aktor_errors = akinator_save_changes_recursive(node->left, fp,
+                                                           recursion_depth))
+        {
+            return aktor_errors;
+        }
+    }
+
+    fprint_tabulation(fp, *recursion_depth);
+    fprintf(fp, "%s\n", node->value);
+
+    if (node->right)
+    {
+        if (aktor_errors = akinator_save_changes_recursive(node->right, fp,
+                                                           recursion_depth))
+        {
+            return aktor_errors;
+        }
+    }
+
+    fprint_tabulation(fp, *recursion_depth - 1);
+    fprintf(fp, "}\n");
+
+    (*recursion_depth)--;
+
+    return aktor_errors;
+}
+
+
+static void fprint_tabulation(FILE * fp, int recursion_depth)
+{
+    MY_ASSERT(fp);
+
+    for (int i = 0; i < recursion_depth; i++)
+    {
+        fprintf(fp, "\t");
+    }
+
+    return;
 }

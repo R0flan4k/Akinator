@@ -1,19 +1,51 @@
 {
-    {
-        Victor Korneplod
-    }
-
-    human
-
-    {
-        {
-            matan
-        }
-
-        school lesson
-
-        {
-            skibidi dop
-        }
-    }
+	{
+		{
+			Petrovich
+		}
+		vedet matan
+		{
+			{
+				Slava Merlow
+			}
+			cheto sdelal
+			{
+				{
+					Sanya Simankovich
+				}
+				mentor
+				{
+					Victor Korneplod
+				}
+			}
+		}
+	}
+	human
+	{
+		{
+			Matan
+		}
+		school lesson
+		{
+			{
+				Animeshnik
+			}
+			smotrit anime
+			{
+				{
+					Mishk Frede
+				}
+				animatronik
+				{
+					{
+						Anonimus
+					}
+					loves tulskiy pryanik
+					{
+						Among us
+					}
+				}
+			}
+		}
+	}
 }
