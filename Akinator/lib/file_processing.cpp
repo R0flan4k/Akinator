@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys\stat.h>
+#include <sys/stat.h>
 
 #include "file_processing.h"
 #include "my_assert.h"

@@ -35,7 +35,7 @@ const AkinatorReplics ENG_AKINATOR_REPLICS = {
 
     .ask_definition_name = "Type the name of object that you want to define.\n",
 
-    .definition =          " is:",
+    .definition =          " is: ",
 
     .invalid_object =      "There is no this object.\n\n",
 };

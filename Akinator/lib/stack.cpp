@@ -162,8 +162,8 @@ Error_t stack_pop(Stack * stk, Elem_t * value)
 
     if (stk->size > 0)
     {
-        *value = stk->data[stk->size];
-        stk->data[stk->size] = STACK_POISON;
+        *value = stk->data[stk->size - 1];
+        stk->data[stk->size - 1] = STACK_POISON;
         (stk->size)--;
 
         if (stk->size <= stk->capacity / STACK_CONSTRICT_COEFFICIENT && stk->capacity > STACK_START_CAPACITY)
@@ -300,7 +300,6 @@ static Error_t stack_vtor(Stack * stk)
 void show_dump_basis(const Stack * stk, const char * stack_name, const Error_t * verificator, const char * func, const int line, const char * file)
 {
     MY_ASSERT(stk);
-    MY_ASSERT(verificator);
 
     printf("-------------------------------------------------------------------\n");
     printf("Stack[%p] \"%s\" from %s(%d), %s\n", stk, stack_name, file, line, func);
@@ -344,7 +343,7 @@ void show_dump_basis(const Stack * stk, const char * stack_name, const Error_t *
     printf("    }\n");
     printf("}\n");
 
-    if (*verificator)
+    if (verificator && *verificator)
     {
         static StackError const errors[] = {
             create_stack_error(STACKERRORS_INVALID_SIZE,
@@ -434,7 +433,7 @@ Error_t stack_reverse_copy(Stack * dst, Stack * src)
 
 
 #ifndef NHASHPOTECTION
-    Hash_t calculate_hash(void * stk, const size_t size)
+    Hash_t calculate_hash(const void * stk, const size_t size)
     {
         if (stk != nullptr)
         {
@@ -478,7 +477,7 @@ Error_t stack_reverse_copy(Stack * dst, Stack * src)
 
 #else // NHASHPROTECTION
 
-    Hash_t calculate_hash(Stack * stk, const size_t size)
+    Hash_t calculate_hash(const void * stk, const size_t size)
     {
         return (Hash_t) 0;
     }

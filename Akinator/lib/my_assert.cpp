@@ -7,7 +7,7 @@
     {
         if (!expr)
         {
-            printf("Assert error: %s, line %d, %s, file %s",
+            printf("Assert error: %s, line %d, %s, file %s\n",
                     expr_string, line, date, file);
             exit(EXIT_FAILURE);
         }

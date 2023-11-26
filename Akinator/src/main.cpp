@@ -5,6 +5,7 @@
 #include "flags.h"
 #include "file_processing.h"
 #include "my_assert.h"
+#include "stack.h"
 
 int main(int argc, char * argv[])
 {

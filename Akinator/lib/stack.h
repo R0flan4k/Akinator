@@ -1,13 +1,13 @@
 #ifndef STACK_H
     #define STACK_H
 
-    typedef double Elem_t;
+    typedef int Elem_t;
     typedef int Error_t;
     typedef long long Jagajaga_t;
     typedef long long Hash_t;
 
     #define show_dump(stk, verificator) show_dump_basis((stk), #stk, (verificator), __func__, __LINE__, __FILE__)
-    #define ELEM_SPEC "%lf"
+    #define ELEM_SPEC "%d"
 
     enum StackErrorsMasks {
         STACKERRORS_INVALID_SIZE =                1 << 0,
@@ -54,7 +54,7 @@
 
     Jagajaga_t * stack_get_data_left_jagajaga(const Stack * stk);
     Jagajaga_t * stack_get_data_right_jagajaga(const Stack * stk);
-    Hash_t calculate_hash(void * stk, const size_t size);
+    Hash_t calculate_hash(const void * stk, const size_t size);
     Hash_t stack_recalculate_hash(Stack * stk, const size_t size);
     void show_dump_basis(const Stack * stk, const char * stack_name, const Error_t * verificator, const char * func, const int line, const char * file);
 
