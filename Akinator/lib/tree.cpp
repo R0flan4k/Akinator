@@ -30,7 +30,7 @@ TError_t op_new_tree(Tree * tree, const Tree_t root_value)
         return errors;
     }
 
-    if ((tree->root = (TreeNode *) calloc(1, sizeof(Tree_t))) == NULL)
+    if ((tree->root = (TreeNode *) calloc(1, sizeof(TreeNode))) == NULL)
     {
         errors |= TREE_ERRORS_CANT_ALLOCATE_MEMORY;
         return errors;

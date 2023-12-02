@@ -506,7 +506,7 @@ static AError_t akinator_add_object(Tree * tree, TreeNode * node, const char * l
     TError_t tree_errors = 0;
     AError_t aktor_errors = 0;
 
-    if (*buffer_size - 2 < *buffer_ptr - *buffer + difference_size + new_object_name_size)/////////////////////////////////////
+    if (*buffer_size - 2 < *buffer_ptr - *buffer + difference_size + new_object_name_size)
         aktor_errors = expand_new_objects_buffer(buffer, buffer_ptr, buffer_size);
 
     if (aktor_errors)
